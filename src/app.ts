@@ -1,11 +1,10 @@
 import express, { Request, Response } from "express";
+import authRouter from "./routes/auth.routes.js"
 
 const app = express();
 
 app.use(express.json());
 
-app.use("/", (req: Request, res: Response) => {
-  res.json({ message: "welcome to the transactions project." });
-});
+app.use("/api/auth", authRouter);
 
 export default app;
