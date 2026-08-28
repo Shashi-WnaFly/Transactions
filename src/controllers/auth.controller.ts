@@ -66,4 +66,60 @@ async function userRegisterController(req: Request, res: Response) {
   }
 }
 
-export { userRegisterController };
+/**
+ * - user login controller
+ * - POST /api/auth/login
+ */
+
+async function userLoginController(req: Request, res: Response) {
+  try {
+    const { emailId, password } = req.body;
+    const user = await User.findOne({
+      emailId: emailId.trim().toLowerCase(),
+    }).select("+password");
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid email or password",
+        status: "failed",
+        success: false,
+      });
+    }
+
+    const isPasswordValid = await user.comparePassword(password);
+
+    if (!isPasswordValid) {
+      return res.status(400).json({
+        message: "Invalid email or password",
+        status: "failed",
+        success: false,
+      });
+    }
+
+    const token = user.getJWT();
+
+    res.cookie("token", token, {
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    req.user = user;
+
+    res.status(200).json({
+      message: "User logged in successfully",
+      data: user,
+      status: "success",
+      success: true,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      message: "Error logging in user",
+      status: "error",
+      error: error.message,
+      success: false,
+    });
+  }
+}
+
+export { userRegisterController, userLoginController };
