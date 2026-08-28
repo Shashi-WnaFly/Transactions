@@ -2,8 +2,9 @@ import mongoose, { Schema } from "mongoose";
 import validator from "validator";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { IUser, IUserMethods, UserModel } from "../types/types.js";
 
-const userSchema = new Schema(
+const userSchema = new Schema<IUser, UserModel, IUserMethods>(
   {
     firstName: {
       type: String,
@@ -82,7 +83,7 @@ const userSchema = new Schema(
       trim: true,
       select: false,
     },
-    otpExpiredAt: {
+    otpExpireAt: {
       type: Date,
       default: null,
       select: false,
@@ -120,5 +121,5 @@ userSchema.methods.getJWT = function () {
   return token;
 };
 
-const User = mongoose.model("user", userSchema);
+const User = mongoose.model<IUser, UserModel>("user", userSchema);
 export default User;
