@@ -24,6 +24,15 @@ async function userRegisterController(req: Request, res: Response) {
       password,
     });
 
+    const isUserExists = await User.findOne({ emailId: normalizedEmailId });
+
+    if (isUserExists) {
+      return res.status(400).json({
+        message: "User already exists with this email.",
+        status: "failed",
+      });
+    }
+
     const user = new User({
       firstName: normalizedFirstName,
       lastName: normalizedLastName,
