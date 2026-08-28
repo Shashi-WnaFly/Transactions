@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { validateRegister } from "../utils/validation.js";
 import User from "../models/user.model.js";
+import { welcomeEmailTemplate } from "../utils/constants.js";
+import sendEmail from "../services/email.service.js";
 /**
  * - user register controller
  * - POST /api/auth/register
@@ -57,6 +59,20 @@ async function userRegisterController(req: Request, res: Response) {
     res.status(201).json({
       message: "User registered successfully",
       data: savedUser,
+    });
+
+    // Send welcome email
+
+    const htmlContent = welcomeEmailTemplate.replace(
+      "{{firstName}}",
+      normalizedFirstName,
+    );
+    await sendEmail(
+      normalizedEmailId,
+      "Welcome to Acme Bank",
+      htmlContent,
+    ).catch((error) => {
+      console.error("Error sending welcome email:", error);
     });
   } catch (error: any) {
     res.status(400).json({
