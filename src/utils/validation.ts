@@ -24,7 +24,7 @@ const validateRegister = ({
     firstName.length > 30 ||
     lastName.length < 2 ||
     lastName.length > 30 ||
-    middleName.length > 30
+    middleName?.length > 30
   ) {
     throw new Error("Name is Invalid!");
   }

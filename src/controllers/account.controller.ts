@@ -8,7 +8,7 @@ import accountModel from "../models/account.model.js";
  * @param res
  */
 
-const createAccountController = async (req: Request, res: Response) => {
+async function createAccountController (req: Request, res: Response) {
   try {
     const user = req.user;
 

@@ -4,12 +4,12 @@ import User from "../models/user.model.js";
 
 /**
  * verify the user using cookies and add it to request
- * @param req 
- * @param res 
- * @param next 
+ * @param req
+ * @param res
+ * @param next
  */
 
-const userAuth = async (req: Request, res: Response, next: NextFunction) => {
+async function userAuth (req: Request, res: Response, next: NextFunction) {
   try {
     const token =
       req.cookies?.token || req.headers.authorization?.split(" ")[1];
