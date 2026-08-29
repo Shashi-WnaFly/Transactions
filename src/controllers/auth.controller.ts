@@ -35,7 +35,7 @@ async function userRegisterController(req: Request, res: Response) {
       });
     }
 
-    const user = new User({
+    const user = await User.create({
       firstName: normalizedFirstName,
       lastName: normalizedLastName,
       middleName: normalizedMiddleName,
@@ -44,9 +44,7 @@ async function userRegisterController(req: Request, res: Response) {
       password,
     });
 
-    const savedUser = await user.save();
-
-    const token = savedUser.getJWT();
+    const token = user.getJWT();
 
     res.cookie("token", token, {
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -54,11 +52,12 @@ async function userRegisterController(req: Request, res: Response) {
       secure: process.env.NODE_ENV === "production",
     });
 
-    req.user = savedUser;
+    req.user = user;
 
     res.status(201).json({
+      status: "success",
       message: "User registered successfully",
-      data: savedUser,
+      data: user,
     });
 
     // Send welcome email
@@ -98,7 +97,6 @@ async function userLoginController(req: Request, res: Response) {
       return res.status(400).json({
         message: "Invalid email or password",
         status: "failed",
-        success: false,
       });
     }
 
@@ -107,8 +105,7 @@ async function userLoginController(req: Request, res: Response) {
     if (!isPasswordValid) {
       return res.status(400).json({
         message: "Invalid email or password",
-        status: "failed",
-        success: false,
+        status: "failed"
       });
     }
 
@@ -125,15 +122,13 @@ async function userLoginController(req: Request, res: Response) {
     res.status(200).json({
       message: "User logged in successfully",
       data: user,
-      status: "success",
-      success: true,
+      status: "success"
     });
   } catch (error: any) {
     res.status(400).json({
       message: "Error logging in user",
       status: "error",
-      error: error.message,
-      success: false,
+      error: error.message
     });
   }
 }
