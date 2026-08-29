@@ -1,5 +1,8 @@
 import { Schema, HydratedDocument, Model } from "mongoose";
 
+/**
+ * user interface and methods
+ */
 export interface IUser extends Document {
   _id: Schema.Types.ObjectId;
   firstName: string;
@@ -23,3 +26,15 @@ export interface IUserMethods {
 
 export type UserModel = Model<IUser, {}, IUserMethods>;
 export type UserDocument = HydratedDocument<IUser, IUserMethods>;
+
+/**
+ * account interface
+ */
+
+export interface IAccount extends Document {
+  user: Schema.Types.ObjectId;
+  status: accountType;
+  currency: string;
+}
+
+export type accountType = "ACTIVE" | "FREEZE" | "CLOSED";
