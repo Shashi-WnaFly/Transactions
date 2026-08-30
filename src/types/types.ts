@@ -37,6 +37,11 @@ export interface IAccount extends Document {
   currency: string;
 }
 
+export interface IAccountMethods {
+  getBalance: () => Promise<number>;
+}
+export type AccountModel = Model<IAccount, {}, IAccountMethods>;
+export type AccountDocument = HydratedDocument<IAccount, IAccountMethods>;
 export type accountType = "ACTIVE" | "FREEZE" | "CLOSED";
 
 /**

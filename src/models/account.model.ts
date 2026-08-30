@@ -1,7 +1,8 @@
 import mongoose, { Schema } from "mongoose";
-import { IAccount } from "../types/types.js";
+import { AccountModel, IAccount, IAccountMethods } from "../types/types.js";
+import Ledger from "./ledger.model.js";
 
-const accountSchema = new Schema<IAccount>(
+const accountSchema = new Schema<IAccount, AccountModel, IAccountMethods>(
   {
     user: {
       type: Schema.Types.ObjectId,
@@ -28,5 +29,46 @@ const accountSchema = new Schema<IAccount>(
 
 accountSchema.index({ user: 1, status: 1 });
 
-const Account = mongoose.model<IAccount>("account", accountSchema);
+accountSchema.methods.getBalance = async function (): Promise<number> {
+  const balanceData = await Ledger.aggregate([
+    { $match: { account: this._id } },
+    {
+      $group: {
+        _id: null,
+        totalDebit: {
+          $sum: {
+            $cond: [
+              {
+                eq: ["$type", "DEBIT"],
+              },
+              "amount",
+              0,
+            ],
+          },
+        },
+        totalCredit: {
+          $sum: {
+            $cond: [
+              {
+                $eq: ["$type", "CREDIT"],
+              },
+              "amount",
+              0,
+            ],
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        balance: { $subtract: ["$totalCredit", "$totalDebit"] },
+      },
+    },
+  ]);
+
+  return balanceData.length == 0 ? 0 : balanceData[0].balance;
+};
+
+const Account = mongoose.model<IAccount, AccountModel>("account", accountSchema);
 export default Account;
