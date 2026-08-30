@@ -38,3 +38,17 @@ export interface IAccount extends Document {
 }
 
 export type accountType = "ACTIVE" | "FREEZE" | "CLOSED";
+
+/**
+ * transaction interface
+ */
+
+export interface ITransaction extends Document{
+  fromAccount: Schema.Types.ObjectId,
+  toAccount: Schema.Types.ObjectId,
+  status: transactionStatusType,
+  amount: number,
+  idempotencyKey: string
+}
+
+export type transactionStatusType = "PENDING" | "COMPLETED" | "FAILED" | "REVERSED"
