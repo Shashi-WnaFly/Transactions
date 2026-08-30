@@ -43,12 +43,29 @@ export type accountType = "ACTIVE" | "FREEZE" | "CLOSED";
  * transaction interface
  */
 
-export interface ITransaction extends Document{
-  fromAccount: Schema.Types.ObjectId,
-  toAccount: Schema.Types.ObjectId,
-  status: transactionStatusType,
-  amount: number,
-  idempotencyKey: string
+export interface ITransaction extends Document {
+  fromAccount: Schema.Types.ObjectId;
+  toAccount: Schema.Types.ObjectId;
+  status: transactionStatusType;
+  amount: number;
+  idempotencyKey: string;
 }
 
-export type transactionStatusType = "PENDING" | "COMPLETED" | "FAILED" | "REVERSED"
+export type transactionStatusType =
+  | "PENDING"
+  | "COMPLETED"
+  | "FAILED"
+  | "REVERSED";
+
+/**
+ * ledger interface
+ */
+
+export interface ILedger extends Document {
+  account: Schema.Types.ObjectId;
+  amount: number;
+  type: ledgerType;
+  transaction: Schema.Types.ObjectId;
+}
+
+export type ledgerType = "CREDIT" | "DEBIT";
