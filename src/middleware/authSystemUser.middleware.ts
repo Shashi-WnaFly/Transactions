@@ -2,6 +2,13 @@ import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import User from "../models/user.model.js";
 
+/**
+ * verify the system user using cookies and add it to request
+ * @param req
+ * @param res
+ * @param next
+ */
+
 const authSystemUser = async (
   req: Request,
   res: Response,
