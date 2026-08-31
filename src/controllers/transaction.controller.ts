@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import Transaction from "../models/transaction.model.js";
 import Account from "../models/account.model.js";
 import mongoose from "mongoose";
+import Ledger from "../models/ledger.model.js";
+import sendEmail from "../services/email.service.js";
+import { transactionEmailHtml } from "../utils/constants.js";
 
 /**
  * - Create a new transaction
@@ -20,6 +23,7 @@ import mongoose from "mongoose";
  * @param res
  */
 async function createTransaction(req: Request, res: Response) {
+  let session: mongoose.ClientSession | null = null;
   try {
     const { fromAccount, toAccount, amount, idempotencyKey } = req.body;
 
@@ -71,8 +75,14 @@ async function createTransaction(req: Request, res: Response) {
      * Validate account availabilty and status
      */
 
-    const from = await Account.findById(fromAccount);
-    const to = await Account.findById(toAccount);
+    const from = await Account.findById(fromAccount).populate("user", [
+      "firstName",
+      "emailId",
+    ]);
+    const to = await Account.findById(toAccount).populate("user", [
+      "firstName",
+      "emailId",
+    ]);
 
     if (!from || !to) {
       return res.status(400).json({
@@ -83,7 +93,7 @@ async function createTransaction(req: Request, res: Response) {
 
     if (from.status !== "ACTIVE" || to.status !== "ACTIVE") {
       return res.status(400).json({
-        message: "Both should be ACTIVE ",
+        message: "Both accounts should be ACTIVE ",
         status: "failed",
       });
     }
@@ -92,27 +102,108 @@ async function createTransaction(req: Request, res: Response) {
      * Derive Sender balance from ledger
      */
 
-    const balance = await fromAccount.getBalance();
+    const fromBalance = await from.getBalance();
 
-    if (balance < amount) {
+    if (fromBalance < amount) {
       return res.status(400).json({
-        message: `Insufficient balance, Current balance is ${balance}. Requested amount is ${amount}`,
+        message: `Insufficient balance, Current balance is ${fromBalance}. Requested amount is ${amount}`,
       });
     }
 
-    const session = await mongoose.startSession();
-    session.startTransaction()
+    /**
+     * session and transaction starting
+     *
+     */
 
-    const transaction = await Transaction.create({
-        fromAccount,
-        toAccount,
-        amount,
-        idempotencyKey
-    }{session});
+    session = await mongoose.startSession();
+    session.startTransaction();
 
+    /**
+     * creating transaction entry default status(PENDING), debit and credit entry
+     */
 
+    const transaction = new Transaction({
+      fromAccount,
+      toAccount,
+      amount,
+      idempotencyKey,
+    });
 
-  } catch (error) {}
+    const debitAccountLedgerEntry = new Ledger({
+      account: fromAccount,
+      amount,
+      type: "DEBIT",
+      transaction: transaction._id,
+    });
+
+    const creditAccountLedgerEntry = new Ledger({
+      account: toAccount,
+      amount,
+      type: "CREDIT",
+      transaction: transaction._id,
+    });
+
+    await transaction.save({ session });
+    await debitAccountLedgerEntry.save({ session });
+    await creditAccountLedgerEntry.save({ session });
+
+    /**
+     * Mark transaction COMPLETED
+     * Commit MongoDB session
+     */
+
+    session.commitTransaction();
+    session.endSession();
+
+    /**
+     * Send email notification
+     */
+
+    const toBalance = await to.getBalance();
+
+    const toEmailDetails = {
+      customerName: to?.user?.firstName!,
+      amount: amount,
+      transactionType: "CREDIT",
+      transactionId: transaction._id.toString(),
+      availableBalance: toBalance,
+      date: transaction.createdAt,
+    };
+
+    const fromEmailDetails = {
+      customerName: req?.user?.firstName!,
+      amount: amount,
+      transactionType: "DEBIT",
+      transactionId: transaction._id.toString(),
+      availableBalance: fromBalance - amount,
+      date: transaction.createdAt,
+    };
+
+    await sendEmail(
+      to.user.emailId,
+      "Transaction Notification",
+      transactionEmailHtml(toEmailDetails),
+    ).catch((error) => {
+      console.error("Error sending welcome email:", error);
+    });
+    await sendEmail(
+      req.user.emailId,
+      "Transaction Notification",
+      transactionEmailHtml(fromEmailDetails),
+    ).catch((error) => {
+      console.error("Error sending welcome email:", error);
+    });
+  } catch (error) {
+    if (session) {
+      await session.abortTransaction();
+      await session.endSession();
+    }
+    console.error("Error creating transaction:", error);
+    res.status(500).json({
+      message: "An error occurred while creating the transaction.",
+      status: "failed",
+    });
+  }
 }
 
 export { createTransaction };
