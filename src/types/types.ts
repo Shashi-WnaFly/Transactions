@@ -1,4 +1,4 @@
-import { Schema, HydratedDocument, Model } from "mongoose";
+import mongoose, { Schema, HydratedDocument, Model } from "mongoose";
 
 /**
  * user interface and methods
@@ -32,7 +32,7 @@ export type UserDocument = HydratedDocument<IUser, IUserMethods>;
  */
 
 export interface IAccount extends Document {
-  user: Schema.Types.ObjectId;
+  user: IUser;
   status: accountType;
   currency: string;
 }
@@ -49,11 +49,13 @@ export type accountType = "ACTIVE" | "FREEZE" | "CLOSED";
  */
 
 export interface ITransaction extends Document {
-  fromAccount: Schema.Types.ObjectId;
-  toAccount: Schema.Types.ObjectId;
+  _id: Schema.Types.ObjectId;
+  fromAccount: Object;
+  toAccount: Object;
   status: transactionStatusType;
   amount: number;
   idempotencyKey: string;
+  createdAt: Date;
 }
 
 export type transactionStatusType =
@@ -67,6 +69,7 @@ export type transactionStatusType =
  */
 
 export interface ILedger extends Document {
+  _id: Schema.Types.ObjectId;
   account: Schema.Types.ObjectId;
   amount: number;
   type: ledgerType;

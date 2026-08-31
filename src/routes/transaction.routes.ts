@@ -4,7 +4,7 @@ import userAuth from "../middleware/auth.middleware.js";
 import { createTransaction } from "../controllers/transaction.controller.js";
 
 /**
- * - POST /api/transactions
+ * - POST /api/transactions/
  */
 
 router.post("/", userAuth, createTransaction);

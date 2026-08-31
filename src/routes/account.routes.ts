@@ -4,7 +4,7 @@ import { createAccountController } from "../controllers/account.controller.js";
 
 const router = express.Router();
 /**
- * POST /api/accounts
+ * POST /api/accounts/
  */
 router.post("/", userAuth, createAccountController);
 
