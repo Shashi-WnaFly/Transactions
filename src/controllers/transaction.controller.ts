@@ -122,44 +122,32 @@ async function createTransaction(req: Request, res: Response) {
      * creating transaction entry default status(PENDING), debit and credit entry
      */
 
-    const transaction = new Transaction(
-      [
-        {
-          fromAccount,
-          toAccount,
-          amount,
-          idempotencyKey,
-        },
-      ],
-      { session },
-    );
+    const transaction = new Transaction({
+      fromAccount,
+      toAccount,
+      amount,
+      idempotencyKey,
+    });
 
-    const debitAccountLedgerEntry = new Ledger(
-      [
-        {
-          account: fromAccount,
-          amount,
-          type: "DEBIT",
-          transaction: transaction._id,
-        },
-      ],
-      { session },
-    );
+    const debitAccountLedgerEntry = new Ledger({
+      account: fromAccount,
+      amount,
+      type: "DEBIT",
+      transaction: transaction._id,
+    });
 
-    const creditAccountLedgerEntry = new Ledger(
-      [
-        {
-          account: toAccount,
-          amount,
-          type: "CREDIT",
-          transaction: transaction._id,
-        },
-      ],
-      { session },
-    );
+    const creditAccountLedgerEntry = new Ledger({
+      account: toAccount,
+      amount,
+      type: "CREDIT",
+      transaction: transaction._id,
+    });
+
+    await transaction.save({ session });
+    await debitAccountLedgerEntry.save({ session });
+    await creditAccountLedgerEntry.save({ session });
 
     transaction.status = "COMPLETED";
-
     await transaction.save({ session });
 
     /**
@@ -171,7 +159,7 @@ async function createTransaction(req: Request, res: Response) {
     await session.endSession();
 
     res.status(201).json({
-      message: "Initial funds transaction completed successfully",
+      message: "transaction completed successfully",
       transaction: transaction,
       status: "success",
     });
@@ -228,6 +216,7 @@ async function createTransaction(req: Request, res: Response) {
 }
 
 async function createInitialFundsTransaction(req: Request, res: Response) {
+  let session = null;
   try {
     const { toAccount, amount, idempotencyKey } = req.body;
 
@@ -291,44 +280,56 @@ async function createInitialFundsTransaction(req: Request, res: Response) {
       });
     }
 
-    const session = await mongoose.startSession();
+    session = await mongoose.startSession();
     session.startTransaction();
 
-    const transaction = await Transaction.create(
-      [
-        {
-          fromAccount: fromAccountData._id,
-          toAccount,
-          amount,
-          idempotencyKey,
-        },
-      ],
-      { session },
-    );
+    const transaction = new Transaction({
+      fromAccount: fromAccountData._id,
+      toAccount,
+      amount,
+      idempotencyKey,
+    });
 
-    const debitLedgerEntry = await Ledger.create(
-      [
-        {
-          account: fromAccountData._id,
-          amount,
-          type: "DEBIT",
-          transaction: transaction._id,
-        },
-      ],
-      { session },
-    );
-    const creditLedgerEntry = await Ledger.create(
-      [
-        {
-          account: toAccount,
-          amount,
-          type: "CREDIT",
-          transaction: transaction._id,
-        },
-      ],
-      { session },
-    );
-  } catch (error) {}
+    const debitLedgerEntry = new Ledger({
+      account: fromAccountData._id,
+      amount,
+      type: "DEBIT",
+      transaction: transaction._id,
+    });
+
+    const creditLedgerEntry = new Ledger({
+      account: toAccount,
+      amount,
+      type: "CREDIT",
+      transaction: transaction._id,
+    });
+
+    await transaction.save({ session });
+    await debitLedgerEntry.save({ session });
+    await creditLedgerEntry.save({ session });
+
+    transaction.status = "COMPLETED";
+    await transaction.save({ session });
+
+    await session.commitTransaction();
+    await session.endSession();
+
+    res.status(201).json({
+      message: "Initial funds transaction completed successfully",
+      transaction: transaction,
+      status: "success",
+    });
+  } catch (error) {
+    if (session) {
+      await session.abortTransaction();
+      await session.endSession();
+    }
+    console.error("Error creating transaction:", error);
+    res.status(500).json({
+      message: "An error occurred while creating the transaction.",
+      status: "failed",
+    });
+  }
 }
 
 export { createTransaction, createInitialFundsTransaction };
