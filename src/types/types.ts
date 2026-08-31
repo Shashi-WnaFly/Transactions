@@ -13,6 +13,7 @@ export interface IUser extends Document {
   password: string;
   age?: number;
   gender?: "male" | "female" | "other";
+  systemUser: boolean,
   otp?: string;
   otpExpireAt?: Date;
   resetPasswordToken?: string;

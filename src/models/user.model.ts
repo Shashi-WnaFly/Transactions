@@ -75,6 +75,12 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
         message: "{VALUE} is not supported",
       },
     },
+    systemUser: {
+      type: Boolean,
+      default: false,
+      immutable: true,
+      select: false,
+    },
     otp: {
       type: String,
       minLength: 6,
