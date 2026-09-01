@@ -3,6 +3,8 @@ import { validateRegister } from "../utils/validation.js";
 import UserModel from "../models/user.model.js";
 import { welcomeEmailTemplate } from "../utils/constants.js";
 import sendEmail from "../services/email.service.js";
+import TokenBlackModel from "../models/tokenBlacklist.model.js";
+
 /**
  * - user register controller
  * - POST /api/auth/register
@@ -135,4 +137,31 @@ async function userLoginController(req: Request, res: Response) {
   }
 }
 
-export { userRegisterController, userLoginController };
+/**
+ * - user log out controller
+ * - POST /api/auth/logout
+ */
+
+async function userLogoutController(req: Request, res: Response) {
+  try {
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(200).json({
+        message: "User logged out successfully",
+      });
+    }
+
+    await TokenBlackModel.create({
+      token: token,
+    });
+
+    res.clearCookie("token");
+
+    res.status(200).json({
+      message: "User logged out successfully",
+    });
+  } catch (error) {}
+}
+
+export { userRegisterController, userLoginController, userLogoutController };

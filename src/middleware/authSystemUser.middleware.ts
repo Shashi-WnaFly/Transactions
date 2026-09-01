@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import UserModel from "../models/user.model.js";
+import TokenBlackModel from "../models/tokenBlacklist.model.js";
 
 /**
  * verify the system user using cookies and add it to request
@@ -22,6 +23,14 @@ const authSystemUser = async (
       return res.status(401).json({
         message: "Unauthorized access, token is missing",
       });
+    }
+
+    const isTokenBlacklisted = await TokenBlackModel.findOne({
+      token: token,
+    });
+
+    if (isTokenBlacklisted) {
+      return res.status(403).json({ message: "Token is blacklisted" });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;

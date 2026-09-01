@@ -1,16 +1,26 @@
 import express from "express";
-import { userLoginController, userRegisterController } from "../controllers/auth.controller.js";
-const router = express.Router();
+import {
+  userLoginController,
+  userRegisterController,
+  userLogoutController,
+} from "../controllers/auth.controller.js";
+const authRouter = express.Router();
 
 /**
  * path: /api/auth/register
  */
-router.post("/register", userRegisterController);
+authRouter.post("/register", userRegisterController);
 
 /**
  * path: /api/auth/login
  */
 
-router.post("/login", userLoginController);
+authRouter.post("/login", userLoginController);
 
-export default router;
+/**
+ * path: /api/auth/logout
+ */
+
+authRouter.post("/logout", userLogoutController);
+
+export default authRouter;

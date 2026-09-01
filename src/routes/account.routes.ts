@@ -15,7 +15,7 @@ const accountRouter = express.Router();
 accountRouter.post("/", userAuthMiddleware, createAccountController);
 
 /**
- * GET /api/accounts
+ * GET /api/accounts/
  */
 
 accountRouter.get("/", userAuthMiddleware, getAllAccountsController);
