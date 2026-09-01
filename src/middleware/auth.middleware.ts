@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import User from "../models/user.model.js";
+import UserModel from "../models/user.model.js";
 
 /**
  * verify the user using cookies and add it to request
@@ -9,7 +9,7 @@ import User from "../models/user.model.js";
  * @param next
  */
 
-async function userAuth (req: Request, res: Response, next: NextFunction) {
+async function userAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const token =
       req.cookies?.token || req.headers.authorization?.split(" ")[1];
@@ -31,7 +31,7 @@ async function userAuth (req: Request, res: Response, next: NextFunction) {
         .json({ message: "Unauthorized access, token is missing" });
     }
 
-    const user = await User.findById(isTokenValid.id);
+    const user = await UserModel.findById(isTokenValid.id);
 
     if (!user) {
       return res
@@ -45,6 +45,6 @@ async function userAuth (req: Request, res: Response, next: NextFunction) {
   } catch (error) {
     return res.status(500).json({ message: "Authentication failed" });
   }
-};
+}
 
 export default userAuth;

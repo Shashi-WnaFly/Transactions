@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import User from "../models/user.model.js";
+import UserModel from "../models/user.model.js";
 
 /**
  * verify the system user using cookies and add it to request
@@ -26,7 +26,7 @@ const authSystemUser = async (
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
 
-    const systemUser = await User.findOne({
+    const systemUser = await UserModel.findOne({
       _id: decoded.id,
       systemUser: true,
     });

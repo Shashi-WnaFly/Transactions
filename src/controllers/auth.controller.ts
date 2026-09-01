@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { validateRegister } from "../utils/validation.js";
-import User from "../models/user.model.js";
+import UserModel from "../models/user.model.js";
 import { welcomeEmailTemplate } from "../utils/constants.js";
 import sendEmail from "../services/email.service.js";
 /**
@@ -26,7 +26,9 @@ async function userRegisterController(req: Request, res: Response) {
       password,
     });
 
-    const isUserExists = await User.findOne({ emailId: normalizedEmailId });
+    const isUserExists = await UserModel.findOne({
+      emailId: normalizedEmailId,
+    });
 
     if (isUserExists) {
       return res.status(400).json({
@@ -35,7 +37,7 @@ async function userRegisterController(req: Request, res: Response) {
       });
     }
 
-    const user = await User.create({
+    const user = await UserModel.create({
       firstName: normalizedFirstName,
       lastName: normalizedLastName,
       middleName: normalizedMiddleName,
@@ -89,7 +91,7 @@ async function userRegisterController(req: Request, res: Response) {
 async function userLoginController(req: Request, res: Response) {
   try {
     const { emailId, password } = req.body;
-    const user = await User.findOne({
+    const user = await UserModel.findOne({
       emailId: emailId.trim().toLowerCase(),
     }).select("+password");
 
@@ -105,7 +107,7 @@ async function userLoginController(req: Request, res: Response) {
     if (!isPasswordValid) {
       return res.status(400).json({
         message: "Invalid email or password",
-        status: "failed"
+        status: "failed",
       });
     }
 
@@ -122,13 +124,13 @@ async function userLoginController(req: Request, res: Response) {
     res.status(200).json({
       message: "User logged in successfully",
       data: user,
-      status: "success"
+      status: "success",
     });
   } catch (error: any) {
     res.status(400).json({
       message: "Error logging in user",
       status: "error",
-      error: error.message
+      error: error.message,
     });
   }
 }

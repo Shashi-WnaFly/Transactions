@@ -2,9 +2,9 @@ import mongoose, { Schema } from "mongoose";
 import validator from "validator";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { IUser, IUserMethods, UserModel } from "../types/types.js";
+import { IUser, IUserMethods, IUserModel } from "../types/types.js";
 
-const userSchema = new Schema<IUser, UserModel, IUserMethods>(
+const userSchema = new Schema<IUser, IUserModel, IUserMethods>(
   {
     firstName: {
       type: String,
@@ -127,5 +127,5 @@ userSchema.methods.getJWT = function () {
   return token;
 };
 
-const User = mongoose.model<IUser, UserModel>("user", userSchema);
-export default User;
+const UserModel = mongoose.model<IUser, IUserModel>("user", userSchema);
+export default UserModel;

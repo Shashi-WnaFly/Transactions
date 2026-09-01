@@ -1,4 +1,4 @@
-import mongoose, { Schema, HydratedDocument, Model } from "mongoose";
+import { Schema, HydratedDocument, Model } from "mongoose";
 
 /**
  * user interface and methods
@@ -13,7 +13,7 @@ export interface IUser extends Document {
   password: string;
   age?: number;
   gender?: "male" | "female" | "other";
-  systemUser: boolean,
+  systemUser: boolean;
   otp?: string;
   otpExpireAt?: Date;
   resetPasswordToken?: string;
@@ -25,7 +25,7 @@ export interface IUserMethods {
   comparePassword(password: string): Promise<boolean>;
 }
 
-export type UserModel = Model<IUser, {}, IUserMethods>;
+export type IUserModel = Model<IUser, {}, IUserMethods>;
 export type UserDocument = HydratedDocument<IUser, IUserMethods>;
 
 /**
@@ -41,7 +41,7 @@ export interface IAccount extends Document {
 export interface IAccountMethods {
   getBalance: () => Promise<number>;
 }
-export type AccountModel = Model<IAccount, {}, IAccountMethods>;
+export type IAccountModel = Model<IAccount, {}, IAccountMethods>;
 export type AccountDocument = HydratedDocument<IAccount, IAccountMethods>;
 export type accountType = "ACTIVE" | "FREEZE" | "CLOSED";
 

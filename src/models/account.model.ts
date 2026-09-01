@@ -1,8 +1,8 @@
 import mongoose, { Schema } from "mongoose";
-import { AccountModel, IAccount, IAccountMethods } from "../types/types.js";
+import { IAccountModel, IAccount, IAccountMethods } from "../types/types.js";
 import Ledger from "./ledger.model.js";
 
-const accountSchema = new Schema<IAccount, AccountModel, IAccountMethods>(
+const accountSchema = new Schema<IAccount, IAccountModel, IAccountMethods>(
   {
     user: {
       type: Schema.Types.ObjectId,
@@ -70,5 +70,8 @@ accountSchema.methods.getBalance = async function (): Promise<number> {
   return balanceData.length == 0 ? 0 : balanceData[0].balance;
 };
 
-const Account = mongoose.model<IAccount, AccountModel>("account", accountSchema);
-export default Account;
+const AccountModel = mongoose.model<IAccount, IAccountModel>(
+  "account",
+  accountSchema,
+);
+export default AccountModel;

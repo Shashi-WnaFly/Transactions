@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import Transaction from "../models/transaction.model.js";
-import Account from "../models/account.model.js";
+import TransactionModel from "../models/transaction.model.js";
+import AccountModel from "../models/account.model.js";
 import mongoose from "mongoose";
-import Ledger from "../models/ledger.model.js";
+import LedgerModel from "../models/ledger.model.js";
 import sendEmail from "../services/email.service.js";
 import { transactionEmailHtml } from "../utils/constants.js";
 
@@ -22,7 +22,7 @@ import { transactionEmailHtml } from "../utils/constants.js";
  * @param req
  * @param res
  */
-async function createTransaction(req: Request, res: Response) {
+async function createTransactionController(req: Request, res: Response) {
   let session: mongoose.ClientSession | null = null;
   try {
     const { fromAccount, toAccount, amount, idempotencyKey } = req.body;
@@ -42,7 +42,7 @@ async function createTransaction(req: Request, res: Response) {
      * Validate idempotency key
      */
 
-    const isIdempotencyKeyExists = await Transaction.findOne({
+    const isIdempotencyKeyExists = await TransactionModel.findOne({
       idempotencyKey: idempotencyKey,
     });
 
@@ -75,11 +75,11 @@ async function createTransaction(req: Request, res: Response) {
      * Validate account availabilty and status
      */
 
-    const from = await Account.findById(fromAccount).populate("user", [
+    const from = await AccountModel.findById(fromAccount).populate("user", [
       "firstName",
       "emailId",
     ]);
-    const to = await Account.findById(toAccount).populate("user", [
+    const to = await AccountModel.findById(toAccount).populate("user", [
       "firstName",
       "emailId",
     ]);
@@ -122,21 +122,21 @@ async function createTransaction(req: Request, res: Response) {
      * creating transaction entry default status(PENDING), debit and credit entry
      */
 
-    const transaction = new Transaction({
+    const transaction = new TransactionModel({
       fromAccount,
       toAccount,
       amount,
       idempotencyKey,
     });
 
-    const debitAccountLedgerEntry = new Ledger({
+    const debitAccountLedgerEntry = new LedgerModel({
       account: fromAccount,
       amount,
       type: "DEBIT",
       transaction: transaction._id,
     });
 
-    const creditAccountLedgerEntry = new Ledger({
+    const creditAccountLedgerEntry = new LedgerModel({
       account: toAccount,
       amount,
       type: "CREDIT",
@@ -215,7 +215,10 @@ async function createTransaction(req: Request, res: Response) {
   }
 }
 
-async function createInitialFundsTransaction(req: Request, res: Response) {
+async function createInitialFundsTransactionController(
+  req: Request,
+  res: Response,
+) {
   let session = null;
   try {
     const { toAccount, amount, idempotencyKey } = req.body;
@@ -232,7 +235,7 @@ async function createInitialFundsTransaction(req: Request, res: Response) {
       });
     }
 
-    const isIdempotencyKeyExists = await Transaction.findOne({
+    const isIdempotencyKeyExists = await TransactionModel.findOne({
       idempotencyKey: idempotencyKey,
     });
 
@@ -262,7 +265,7 @@ async function createInitialFundsTransaction(req: Request, res: Response) {
       }
     }
 
-    const toAccountData = await Account.findById(toAccount);
+    const toAccountData = await AccountModel.findById(toAccount);
 
     if (!toAccountData || toAccountData.status !== "ACTIVE") {
       return res.status(500).json({
@@ -270,7 +273,7 @@ async function createInitialFundsTransaction(req: Request, res: Response) {
       });
     }
 
-    const fromAccountData = await Account.findOne({
+    const fromAccountData = await AccountModel.findOne({
       user: req.user._id,
     });
 
@@ -283,21 +286,21 @@ async function createInitialFundsTransaction(req: Request, res: Response) {
     session = await mongoose.startSession();
     session.startTransaction();
 
-    const transaction = new Transaction({
+    const transaction = new TransactionModel({
       fromAccount: fromAccountData._id,
       toAccount,
       amount,
       idempotencyKey,
     });
 
-    const debitLedgerEntry = new Ledger({
+    const debitLedgerEntry = new LedgerModel({
       account: fromAccountData._id,
       amount,
       type: "DEBIT",
       transaction: transaction._id,
     });
 
-    const creditLedgerEntry = new Ledger({
+    const creditLedgerEntry = new LedgerModel({
       account: toAccount,
       amount,
       type: "CREDIT",
@@ -332,4 +335,4 @@ async function createInitialFundsTransaction(req: Request, res: Response) {
   }
 }
 
-export { createTransaction, createInitialFundsTransaction };
+export { createTransactionController, createInitialFundsTransactionController };
