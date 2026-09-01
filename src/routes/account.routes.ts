@@ -1,6 +1,10 @@
 import express from "express";
 import userAuthMiddleware from "../middleware/auth.middleware.js";
-import { createAccountController, getAllAccountsController } from "../controllers/account.controller.js";
+import {
+  createAccountController,
+  getAllAccountsController,
+  getAccountBalanceController,
+} from "../controllers/account.controller.js";
 
 const accountRouter = express.Router();
 
@@ -15,5 +19,15 @@ accountRouter.post("/", userAuthMiddleware, createAccountController);
  */
 
 accountRouter.get("/", userAuthMiddleware, getAllAccountsController);
+
+/**
+ * GET /api/accounts/balance/:accountId
+ */
+
+accountRouter.get(
+  "/balance/:accountId",
+  userAuthMiddleware,
+  getAccountBalanceController,
+);
 
 export default accountRouter;

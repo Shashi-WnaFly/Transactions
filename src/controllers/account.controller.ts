@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import AccountModel from "../models/account.model.js";
+import accountRouter from "../routes/account.routes.js";
 
 /**
  * - creating an account controller
- * - POST /api/accounts
+ * - POST /api/accounts/
  * @param req
  * @param res
  */
@@ -29,6 +30,13 @@ async function createAccountController(req: Request, res: Response) {
   }
 }
 
+/**
+ * - get all accounts of logged in user
+ * - GET /api/accounts/
+ * @param req
+ * @param res
+ */
+
 async function getAllAccountsController(req: Request, res: Response) {
   try {
     const accountsDetails = await AccountModel.find({ user: req.user._id });
@@ -49,6 +57,41 @@ async function getAllAccountsController(req: Request, res: Response) {
       message: "Something went wrong",
       status: "failed",
       error: error,
+    });
+  }
+}
+
+/**
+ * get available balance of an account
+ * GET /api/accounts/balance/:accountId
+ * @param req
+ * @param res
+ */
+
+async function getAccountBalanceController(req: Request, res: Response) {
+  try {
+    const { accountId } = req.params;
+    const account = await AccountModel.findOne({
+      _id: accountId,
+      user: req.user._id,
+    });
+
+    if (!account) {
+      return res.status(500).json({
+        message: "No account found",
+        success: "failed",
+      });
+    }
+
+    const balance = await account.getBalance();
+
+    res.status(200).json({
+      status: "success",
+      balance: balance,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: `Error message: ${error}`,
     });
   }
 }
