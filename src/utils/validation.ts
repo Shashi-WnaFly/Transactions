@@ -4,18 +4,16 @@ const validateRegister = ({
   firstName,
   lastName,
   middleName,
-  mobileNo,
   emailId,
   password,
 }: {
   firstName: string;
   lastName: string;
   middleName: string;
-  mobileNo: string;
   emailId: string;
   password: string;
 }) => {
-  if (!firstName || !lastName || !mobileNo || !emailId || !password) {
+  if (!firstName || !lastName || !emailId || !password) {
     throw new Error("All fields are required!");
   }
 
@@ -27,10 +25,6 @@ const validateRegister = ({
     middleName?.length > 30
   ) {
     throw new Error("Name is Invalid!");
-  }
-
-  if (mobileNo.length !== 10 || !validator.isNumeric(mobileNo)) {
-    throw new Error("Mobile no. is Invalid!");
   }
 
   if (!validator.isEmail(emailId)) {

@@ -12,8 +12,7 @@ import TokenBlackModel from "../models/tokenBlacklist.model.js";
 
 async function userRegisterController(req: Request, res: Response) {
   try {
-    const { firstName, lastName, middleName, mobileNo, emailId, password } =
-      req.body;
+    const { firstName, lastName, middleName, emailId, password } = req.body;
     const normalizedFirstName = firstName.trim();
     const normalizedLastName = lastName.trim();
     const normalizedMiddleName = middleName?.trim();
@@ -23,7 +22,6 @@ async function userRegisterController(req: Request, res: Response) {
       firstName: normalizedFirstName,
       lastName: normalizedLastName,
       middleName: normalizedMiddleName,
-      mobileNo,
       emailId: normalizedEmailId,
       password,
     });
@@ -43,7 +41,6 @@ async function userRegisterController(req: Request, res: Response) {
       firstName: normalizedFirstName,
       lastName: normalizedLastName,
       middleName: normalizedMiddleName,
-      mobileNo,
       emailId: normalizedEmailId,
       password,
     });
@@ -161,7 +158,12 @@ async function userLogoutController(req: Request, res: Response) {
     res.status(200).json({
       message: "User logged out successfully",
     });
-  } catch (error) {}
+  } catch (error) {
+    res.clearCookie("token");
+    res.status(200).json({
+      message: "User logged out successfully",
+    });
+  }
 }
 
 export { userRegisterController, userLoginController, userLogoutController };

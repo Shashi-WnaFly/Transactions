@@ -9,7 +9,7 @@ export interface IUser extends Document {
   middleName?: string;
   lastName: string;
   emailId: string;
-  mobileNo: string;
+  mobileNo?: string;
   password: string;
   age?: number;
   gender?: "male" | "female" | "other";

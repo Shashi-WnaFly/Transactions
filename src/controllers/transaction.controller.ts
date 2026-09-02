@@ -223,7 +223,7 @@ async function createInitialFundsTransactionController(
   try {
     const { toAccount, amount, idempotencyKey } = req.body;
 
-    if (!toAccount || !amount || idempotencyKey) {
+    if (!toAccount || !amount || !idempotencyKey) {
       return res.status(500).json({
         message: "toAccount, amount and idempotencyKey all are required",
       });

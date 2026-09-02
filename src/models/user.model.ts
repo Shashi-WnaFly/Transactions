@@ -39,10 +39,9 @@ const userSchema = new Schema<IUser, IUserModel, IUserMethods>(
     },
     mobileNo: {
       type: String,
-      unique: [true, "Mobile no. already exists!"],
+      // unique: [true, "Mobile no. already exists!"],
       minLength: 10,
       maxLength: 10,
-      required: [true, "User phone number required!"],
       select: false,
     },
     password: {

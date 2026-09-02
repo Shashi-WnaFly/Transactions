@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import AccountModel from "../models/account.model.js";
-import accountRouter from "../routes/account.routes.js";
 
 /**
  * - creating an account controller
@@ -87,7 +86,7 @@ async function getAccountBalanceController(req: Request, res: Response) {
 
     res.status(200).json({
       status: "success",
-      balance: balance,
+      available_balance: balance,
     });
   } catch (error) {
     res.status(500).json({
@@ -96,4 +95,4 @@ async function getAccountBalanceController(req: Request, res: Response) {
   }
 }
 
-export { createAccountController, getAllAccountsController };
+export { createAccountController, getAllAccountsController, getAccountBalanceController };

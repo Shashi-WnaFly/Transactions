@@ -39,9 +39,9 @@ accountSchema.methods.getBalance = async function (): Promise<number> {
           $sum: {
             $cond: [
               {
-                eq: ["$type", "DEBIT"],
+                $eq: ["$type", "DEBIT"],
               },
-              "amount",
+              "$amount",
               0,
             ],
           },
@@ -52,7 +52,7 @@ accountSchema.methods.getBalance = async function (): Promise<number> {
               {
                 $eq: ["$type", "CREDIT"],
               },
-              "amount",
+              "$amount",
               0,
             ],
           },
@@ -66,6 +66,8 @@ accountSchema.methods.getBalance = async function (): Promise<number> {
       },
     },
   ]);
+
+  console.log(balanceData);
 
   return balanceData.length == 0 ? 0 : balanceData[0].balance;
 };
