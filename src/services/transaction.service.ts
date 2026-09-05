@@ -15,13 +15,14 @@ export async function createTransfer(input: {
   amount: number;
   idempotencyKey: string;
   userId: mongoose.Schema.Types.ObjectId;
+  deposit: boolean;
 }) {
   const session = await mongoose.startSession();
   try {
     /**
      * session and transaction starting
      */
-    return session.withTransaction(async () => {
+    return await session.withTransaction(async () => {
       /**
        * Validate idempotency key
        */
@@ -32,19 +33,6 @@ export async function createTransfer(input: {
       if (existing) {
         return { transaction: existing, duplicate: true };
       }
-
-      const [transaction]: any = await TransactionModel.create(
-        [
-          {
-            fromAccount: input.fromAccount,
-            toAccount: input.toAccount,
-            amount: input.amount,
-            idempotencyKey: input.idempotencyKey,
-            status: "PENDING",
-          },
-        ],
-        { session: session },
-      );
 
       /**
        * Validate account availabilty and status
@@ -66,7 +54,7 @@ export async function createTransfer(input: {
 
       const fromBalance = await debitedAccount.getBalance();
 
-      if (fromBalance < input.amount) {
+      if (!input.deposit && fromBalance < input.amount) {
         throw new InsufficientFundsError();
       }
 
@@ -80,8 +68,29 @@ export async function createTransfer(input: {
       }
 
       /**
+       * creating transaction
+       */
+
+      const [transaction]: any = await TransactionModel.create(
+        [
+          {
+            fromAccount: input.fromAccount,
+            toAccount: input.toAccount,
+            amount: input.amount,
+            idempotencyKey: input.idempotencyKey,
+            status: "PENDING",
+          },
+        ],
+        { session: session },
+      );
+
+      /**
        * Creating Ledger Entries
        */
+
+      await (() => {
+        return new Promise((resolve) => setTimeout(resolve, 1000 * 15));
+      })();
 
       await LedgerModel.insertMany(
         [
@@ -127,12 +136,12 @@ export function transactionExists(
     });
   }
   if (status === "FAILED") {
-    return res.status(500).json({
+    return res.status(400).json({
       message: "Transaction processing failed, please retry",
     });
   }
   if (status === "REVERSED") {
-    return res.status(500).json({
+    return res.status(400).json({
       message: "Transaction was reversed, please retry",
     });
   }

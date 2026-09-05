@@ -1,10 +1,6 @@
 import { Request, Response } from "express";
 import TransactionModel from "../models/transaction.model.js";
 import AccountModel from "../models/account.model.js";
-import mongoose from "mongoose";
-import LedgerModel from "../models/ledger.model.js";
-import sendEmail from "../services/email.service.js";
-import { transactionEmailHtml } from "../utils/constants.js";
 import {
   createTransfer,
   transactionExists,
@@ -53,7 +49,7 @@ async function createTransactionController(req: Request, res: Response) {
     });
 
     if (isIdempotencyKeyExists) {
-      transactionExists(
+      return transactionExists(
         res,
         isIdempotencyKeyExists.status,
         isIdempotencyKeyExists,
@@ -66,6 +62,7 @@ async function createTransactionController(req: Request, res: Response) {
       amount,
       idempotencyKey,
       userId: req.user._id,
+      deposit: false,
     });
 
     if (transactionData.duplicate) {
@@ -75,7 +72,7 @@ async function createTransactionController(req: Request, res: Response) {
         status: "success",
       });
     }
-    res.status(201).json({
+    return res.status(201).json({
       message: "Transaction created successfully",
       transaction: transactionData.transaction,
       status: "success",
@@ -121,6 +118,7 @@ async function createTransactionController(req: Request, res: Response) {
     // });
   } catch (error) {
     console.error("Error creating transaction:", error);
+    if (res.headersSent) return;
     res.status(500).json({
       message: (error as Error).message,
       status: "failed",
@@ -152,7 +150,7 @@ async function createInitialFundsTransactionController(
     });
 
     if (isIdempotencyKeyExists) {
-      transactionExists(
+      return transactionExists(
         res,
         isIdempotencyKeyExists.status,
         isIdempotencyKeyExists,
@@ -161,7 +159,6 @@ async function createInitialFundsTransactionController(
 
     const fromAccount = await AccountModel.findOne({
       user: req.user._id,
-      systemUser: true,
     });
 
     if (!fromAccount) {
@@ -176,6 +173,7 @@ async function createInitialFundsTransactionController(
       amount,
       idempotencyKey,
       userId: req.user._id,
+      deposit: true,
     });
 
     if (transactionData.duplicate) {
@@ -186,13 +184,14 @@ async function createInitialFundsTransactionController(
       });
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Initial funds transaction created successfully",
       transaction: transactionData.transaction,
       status: "success",
     });
   } catch (error) {
     console.error("Error creating transaction:", error);
+    if (res.headersSent) return;
     res.status(500).json({
       message: (error as Error).message,
       status: "failed",

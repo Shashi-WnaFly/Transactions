@@ -67,8 +67,6 @@ accountSchema.methods.getBalance = async function (): Promise<number> {
     },
   ]);
 
-  console.log(balanceData);
-
   return balanceData.length == 0 ? 0 : balanceData[0].balance;
 };
 
