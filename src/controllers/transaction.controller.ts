@@ -5,6 +5,10 @@ import mongoose from "mongoose";
 import LedgerModel from "../models/ledger.model.js";
 import sendEmail from "../services/email.service.js";
 import { transactionEmailHtml } from "../utils/constants.js";
+import {
+  createTransfer,
+  transactionExists,
+} from "../services/transaction.service.js";
 
 /**
  * - Create a new transaction
@@ -23,7 +27,6 @@ import { transactionEmailHtml } from "../utils/constants.js";
  * @param res
  */
 async function createTransactionController(req: Request, res: Response) {
-  let session: mongoose.ClientSession | null = null;
   try {
     const { fromAccount, toAccount, amount, idempotencyKey } = req.body;
 
@@ -38,129 +41,43 @@ async function createTransactionController(req: Request, res: Response) {
       });
     }
 
-    /**
-     * Validate idempotency key
-     */
+    if (fromAccount.toString() !== toAccount.toString()) {
+      return res.status(400).json({
+        message: "Invalid transaction details.",
+        status: "failed",
+      });
+    }
 
     const isIdempotencyKeyExists = await TransactionModel.findOne({
       idempotencyKey: idempotencyKey,
     });
 
     if (isIdempotencyKeyExists) {
-      if (isIdempotencyKeyExists.status === "COMPLETED") {
-        return res.status(200).json({
-          message: "Transaction is successfully completed",
-          status: "success",
-          transaction: isIdempotencyKeyExists,
-        });
-      }
-      if (isIdempotencyKeyExists.status === "PENDING") {
-        return res.status(200).json({
-          message: "Transaction is still processing",
-        });
-      }
-      if (isIdempotencyKeyExists.status === "FAILED") {
-        return res.status(500).json({
-          message: "Transaction processing failed, please retry",
-        });
-      }
-      if (isIdempotencyKeyExists.status === "REVERSED") {
-        return res.status(500).json({
-          message: "Transaction was reversed, please retry",
-        });
-      }
+      transactionExists(
+        res,
+        isIdempotencyKeyExists.status,
+        isIdempotencyKeyExists,
+      );
     }
 
-    /**
-     * Validate account availabilty and status
-     */
-
-    const from = await AccountModel.findById(fromAccount).populate("user", [
-      "firstName",
-      "emailId",
-    ]);
-    const to = await AccountModel.findById(toAccount).populate("user", [
-      "firstName",
-      "emailId",
-    ]);
-
-    if (!from || !to) {
-      return res.status(400).json({
-        message: "Accounts are invalid!!",
-        status: "failed",
-      });
-    }
-
-    if (from.status !== "ACTIVE" || to.status !== "ACTIVE") {
-      return res.status(400).json({
-        message: "Both accounts should be ACTIVE ",
-        status: "failed",
-      });
-    }
-
-    /**
-     * Derive Sender balance from ledger
-     */
-
-    const fromBalance = await from.getBalance();
-
-    if (fromBalance < amount) {
-      return res.status(400).json({
-        message: `Insufficient balance, Current balance is ${fromBalance}. Requested amount is ${amount}`,
-      });
-    }
-
-    /**
-     * session and transaction starting
-     *
-     */
-
-    session = await mongoose.startSession();
-    session.startTransaction();
-
-    /**
-     * creating transaction entry default status(PENDING), debit and credit entry
-     */
-
-    const transaction = new TransactionModel({
+    const transactionData = await createTransfer({
       fromAccount,
       toAccount,
       amount,
       idempotencyKey,
+      userId: req.user._id,
     });
 
-    const debitAccountLedgerEntry = new LedgerModel({
-      account: fromAccount,
-      amount,
-      type: "DEBIT",
-      transaction: transaction._id,
-    });
-
-    const creditAccountLedgerEntry = new LedgerModel({
-      account: toAccount,
-      amount,
-      type: "CREDIT",
-      transaction: transaction._id,
-    });
-
-    await transaction.save({ session });
-    await debitAccountLedgerEntry.save({ session });
-    await creditAccountLedgerEntry.save({ session });
-
-    transaction.status = "COMPLETED";
-    await transaction.save({ session });
-
-    /**
-     * Mark transaction COMPLETED
-     * Commit MongoDB session
-     */
-
-    await session.commitTransaction();
-    await session.endSession();
-
+    if (transactionData.duplicate) {
+      return res.status(200).json({
+        message: "Transaction already exists with the same idempotency key",
+        transaction: transactionData.transaction,
+        status: "success",
+      });
+    }
     res.status(201).json({
-      message: "transaction completed successfully",
-      transaction: transaction,
+      message: "Transaction created successfully",
+      transaction: transactionData.transaction,
       status: "success",
     });
 
@@ -168,45 +85,41 @@ async function createTransactionController(req: Request, res: Response) {
      * Send email notification
      */
 
-    const toBalance = await to.getBalance();
+    // const toBalance = await to.getBalance();
 
-    const toEmailDetails = {
-      customerName: to?.user?.firstName!,
-      amount: amount,
-      transactionType: "CREDIT",
-      transactionId: transaction._id.toString(),
-      availableBalance: toBalance,
-      date: transaction.createdAt,
-    };
+    // const toEmailDetails = {
+    //   customerName: to?.user?.firstName!,
+    //   amount: amount,
+    //   transactionType: "CREDIT",
+    //   transactionId: transaction._id.toString(),
+    //   availableBalance: toBalance,
+    //   date: transaction.createdAt,
+    // };
 
-    const fromEmailDetails = {
-      customerName: req?.user?.firstName!,
-      amount: amount,
-      transactionType: "DEBIT",
-      transactionId: transaction._id.toString(),
-      availableBalance: fromBalance - amount,
-      date: transaction.createdAt,
-    };
+    // const fromEmailDetails = {
+    //   customerName: req?.user?.firstName!,
+    //   amount: amount,
+    //   transactionType: "DEBIT",
+    //   transactionId: transaction._id.toString(),
+    //   availableBalance: fromBalance - amount,
+    //   date: transaction.createdAt,
+    // };
 
-    await sendEmail(
-      to.user.emailId,
-      "Transaction Notification",
-      transactionEmailHtml(toEmailDetails),
-    ).catch((error) => {
-      console.error("Error sending welcome email:", error);
-    });
-    await sendEmail(
-      req.user.emailId,
-      "Transaction Notification",
-      transactionEmailHtml(fromEmailDetails),
-    ).catch((error) => {
-      console.error("Error sending welcome email:", error);
-    });
+    // await sendEmail(
+    //   to.user.emailId,
+    //   "Transaction Notification",
+    //   transactionEmailHtml(toEmailDetails),
+    // ).catch((error) => {
+    //   console.error("Error sending welcome email:", error);
+    // });
+    // await sendEmail(
+    //   req.user.emailId,
+    //   "Transaction Notification",
+    //   transactionEmailHtml(fromEmailDetails),
+    // ).catch((error) => {
+    //   console.error("Error sending welcome email:", error);
+    // });
   } catch (error) {
-    if (session) {
-      await session.abortTransaction();
-      await session.endSession();
-    }
     console.error("Error creating transaction:", error);
     res.status(500).json({
       message: "An error occurred while creating the transaction.",
