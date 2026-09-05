@@ -122,7 +122,7 @@ async function createTransactionController(req: Request, res: Response) {
   } catch (error) {
     console.error("Error creating transaction:", error);
     res.status(500).json({
-      message: "An error occurred while creating the transaction.",
+      message: (error as Error).message,
       status: "failed",
     });
   }
@@ -132,7 +132,6 @@ async function createInitialFundsTransactionController(
   req: Request,
   res: Response,
 ) {
-  let session = null;
   try {
     const { toAccount, amount, idempotencyKey } = req.body;
 
@@ -142,7 +141,7 @@ async function createInitialFundsTransactionController(
       });
     }
 
-    if (amount < 0) {
+    if (amount <= 0) {
       return res.status(500).json({
         message: "Invalid request, Amount should be positive",
       });
@@ -153,96 +152,49 @@ async function createInitialFundsTransactionController(
     });
 
     if (isIdempotencyKeyExists) {
-      if (isIdempotencyKeyExists.status === "COMPLETED") {
-        return res.status(200).json({
-          message: "Transaction is successfully completed",
-          status: "success",
-          transaction: isIdempotencyKeyExists,
-        });
-      }
-      if (isIdempotencyKeyExists.status === "PENDING") {
-        return res.status(200).json({
-          message: "Transaction is still processing",
-        });
-      }
-      if (isIdempotencyKeyExists.status === "FAILED") {
-        return res.status(500).json({
-          message: "Transaction processing failed, please retry",
-          status: "failed",
-        });
-      }
-      if (isIdempotencyKeyExists.status === "REVERSED") {
-        return res.status(500).json({
-          message: "Transaction was reversed, please retry",
-        });
-      }
+      transactionExists(
+        res,
+        isIdempotencyKeyExists.status,
+        isIdempotencyKeyExists,
+      );
     }
 
-    const toAccountData = await AccountModel.findById(toAccount);
-
-    if (!toAccountData || toAccountData.status !== "ACTIVE") {
-      return res.status(500).json({
-        message: "Invalid request, Account should be ACTIVE",
-      });
-    }
-
-    const fromAccountData = await AccountModel.findOne({
+    const fromAccount = await AccountModel.findOne({
       user: req.user._id,
+      systemUser: true,
     });
 
-    if (!fromAccountData) {
-      return res.status(400).json({
-        message: "System user account not found",
+    if (!fromAccount) {
+      return res.status(404).json({
+        message: "From account not found",
       });
     }
 
-    session = await mongoose.startSession();
-    session.startTransaction();
-
-    const transaction = new TransactionModel({
-      fromAccount: fromAccountData._id,
+    const transactionData = await createTransfer({
+      fromAccount: fromAccount._id,
       toAccount,
       amount,
       idempotencyKey,
+      userId: req.user._id,
     });
 
-    const debitLedgerEntry = new LedgerModel({
-      account: fromAccountData._id,
-      amount,
-      type: "DEBIT",
-      transaction: transaction._id,
-    });
-
-    const creditLedgerEntry = new LedgerModel({
-      account: toAccount,
-      amount,
-      type: "CREDIT",
-      transaction: transaction._id,
-    });
-
-    await transaction.save({ session });
-    await debitLedgerEntry.save({ session });
-    await creditLedgerEntry.save({ session });
-
-    transaction.status = "COMPLETED";
-    await transaction.save({ session });
-
-    await session.commitTransaction();
-    await session.endSession();
+    if (transactionData.duplicate) {
+      return res.status(200).json({
+        message: "Transaction already exists with the same idempotency key",
+        transaction: transactionData.transaction,
+        status: "success",
+      });
+    }
 
     res.status(201).json({
-      message: "Initial funds transaction completed successfully",
-      transaction: transaction,
+      message: "Initial funds transaction created successfully",
+      transaction: transactionData.transaction,
       status: "success",
     });
   } catch (error) {
-    if (session) {
-      await session.abortTransaction();
-      await session.endSession();
-    }
     console.error("Error creating transaction:", error);
     res.status(500).json({
-      message: "An error occurred while creating the transaction.",
+      message: (error as Error).message,
       status: "failed",
     });
   }

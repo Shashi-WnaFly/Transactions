@@ -42,7 +42,7 @@ const authSystemUser = async (
 
     if (!systemUser) {
       return res.status(403).json({
-        message: "Access forbidden, access denied",
+        message: " Unauthorized access, user is not a system user",
       });
     }
 
