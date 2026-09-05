@@ -1,4 +1,4 @@
-import { Schema, HydratedDocument, Model } from "mongoose";
+import mongoose, { Schema, HydratedDocument, Model } from "mongoose";
 
 /**
  * user interface and methods
@@ -33,7 +33,8 @@ export type UserDocument = HydratedDocument<IUser, IUserMethods>;
  */
 
 export interface IAccount extends Document {
-  user: IUser;
+  _id: mongoose.Schema.Types.ObjectId;
+  user: mongoose.Schema.Types.ObjectId;
   status: accountType;
   currency: string;
 }
@@ -51,8 +52,8 @@ export type accountType = "ACTIVE" | "FREEZE" | "CLOSED";
 
 export interface ITransaction extends Document {
   _id: Schema.Types.ObjectId;
-  fromAccount: Object;
-  toAccount: Object;
+  fromAccount: Schema.Types.ObjectId;
+  toAccount: Schema.Types.ObjectId;
   status: transactionStatusType;
   amount: number;
   idempotencyKey: string;

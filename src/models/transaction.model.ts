@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { ITransaction } from "../types/types.js";
 
-const transactionSchema = new mongoose.Schema<ITransaction>(
+const transactionSchema = new mongoose.Schema(
   {
     fromAccount: {
       type: mongoose.Schema.Types.ObjectId,
@@ -44,7 +44,7 @@ const transactionSchema = new mongoose.Schema<ITransaction>(
   { timestamps: true },
 );
 
-const TransactionModel = mongoose.model<ITransaction>(
+const TransactionModel = mongoose.model(
   "transaction",
   transactionSchema,
 );
