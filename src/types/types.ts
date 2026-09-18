@@ -1,10 +1,10 @@
-import mongoose, { Schema, HydratedDocument, Model } from "mongoose";
+import { type HydratedDocument, type Model, type Types } from "mongoose";
 
 /**
  * user interface and methods
  */
 export interface IUser extends Document {
-  _id: Schema.Types.ObjectId;
+  _id: Types.ObjectId;
   firstName: string;
   middleName?: string;
   lastName: string;
@@ -33,8 +33,8 @@ export type UserDocument = HydratedDocument<IUser, IUserMethods>;
  */
 
 export interface IAccount extends Document {
-  _id: mongoose.Schema.Types.ObjectId;
-  user: mongoose.Schema.Types.ObjectId;
+  _id: Types.ObjectId;
+  user: Types.ObjectId;
   status: accountType;
   currency: string;
 }
@@ -51,9 +51,9 @@ export type accountType = "ACTIVE" | "FREEZE" | "CLOSED";
  */
 
 export interface ITransaction extends Document {
-  _id: Schema.Types.ObjectId;
-  fromAccount: Schema.Types.ObjectId;
-  toAccount: Schema.Types.ObjectId;
+  _id: Types.ObjectId;
+  fromAccount: Types.ObjectId;
+  toAccount: Types.ObjectId;
   status: transactionStatusType;
   amount: number;
   idempotencyKey: string;
@@ -71,11 +71,11 @@ export type transactionStatusType =
  */
 
 export interface ILedger extends Document {
-  _id: Schema.Types.ObjectId;
-  account: Schema.Types.ObjectId;
+  _id: Types.ObjectId;
+  account: Types.ObjectId;
   amount: number;
   type: ledgerType;
-  transaction: Schema.Types.ObjectId;
+  transaction: Types.ObjectId;
 }
 
 export type ledgerType = "CREDIT" | "DEBIT";

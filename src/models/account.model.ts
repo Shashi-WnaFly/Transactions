@@ -2,7 +2,7 @@ import mongoose, { Schema } from "mongoose";
 import { IAccountModel, IAccount, IAccountMethods } from "../types/types.js";
 import Ledger from "./ledger.model.js";
 
-const accountSchema = new Schema<IAccount, IAccountModel, IAccountMethods>(
+const accountSchema = new Schema<IAccount, IAccountMethods>(
   {
     user: {
       type: Schema.Types.ObjectId,

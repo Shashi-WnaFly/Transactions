@@ -95,4 +95,8 @@ async function getAccountBalanceController(req: Request, res: Response) {
   }
 }
 
-export { createAccountController, getAllAccountsController, getAccountBalanceController };
+export {
+  createAccountController,
+  getAllAccountsController,
+  getAccountBalanceController,
+};

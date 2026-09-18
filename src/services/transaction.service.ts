@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, {type Types} from "mongoose";
 import TransactionModel from "../models/transaction.model.js";
 import AccountModel from "../models/account.model.js";
 import LedgerModel from "../models/ledger.model.js";
@@ -10,11 +10,11 @@ import {
 import { Response } from "express";
 
 export async function createTransfer(input: {
-  fromAccount: mongoose.Schema.Types.ObjectId;
-  toAccount: mongoose.Schema.Types.ObjectId;
+  fromAccount: Types.ObjectId;
+  toAccount: Types.ObjectId;
   amount: number;
   idempotencyKey: string;
-  userId: mongoose.Schema.Types.ObjectId;
+  userId: Types.ObjectId;
   deposit: boolean;
 }) {
   const session = await mongoose.startSession();
